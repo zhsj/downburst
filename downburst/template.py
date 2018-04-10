@@ -64,7 +64,7 @@ def volume(
     if sparse:
         etree.SubElement(root, 'allocation').text = '0'
     if raw:
-        _format = 'raw'
+        format_ = 'raw'
     target = etree.SubElement(root, 'target')
     if format_ is None:
         format_ = 'qcow2'
