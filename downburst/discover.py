@@ -4,7 +4,9 @@ import csv
 import HTMLParser
 import json
 
-URL="http://download.ceph.com/cloudinit/"
+
+URL = "http://download.ceph.com/cloudinit/"
+
 
 class Parser(HTMLParser.HTMLParser):
     def __init__(self):
@@ -14,15 +16,16 @@ class Parser(HTMLParser.HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
             for key, val in attrs:
-                if  key == 'href' and (val.endswith('.img') or val.endswith('.raw')):
+                if key == 'href' and (val.endswith('.img') or val.endswith('.raw')):
                     self.filenames.append(val)
+
 
 class UbuntuHandler:
     URL = 'http://cloud-images.ubuntu.com'
 
     VERSION_TO_RELEASE = {
         '4.10': 'warty',
-        '5.10': 'hoary',
+        '5.04': 'hoary',
         '5.10': 'breezy',
         '6.06': 'dapper',
         '6.10': 'edgy',
@@ -47,7 +50,7 @@ class UbuntuHandler:
         '16.04': 'xenial',
     }
 
-    RELEASE_TO_VERSION = {v:k for k, v in VERSION_TO_RELEASE.items()}
+    RELEASE_TO_VERSION = {v: k for k, v in VERSION_TO_RELEASE.items()}
 
     def get_release(self, distroversion):
         try:
@@ -70,7 +73,6 @@ class UbuntuHandler:
         url = self.URL + '/query/released.latest.txt'
         r = requests.get(url)
         r.raise_for_status()
-        serial = None
         for row in csv.DictReader(r.content.strip().split("\n"),
                                   delimiter="\t",
                                   fieldnames=('release', 'flavour', 'stability',
@@ -85,15 +87,14 @@ class UbuntuHandler:
             state = ''
         else:
             state = '-' + state
-        return 'ubuntu-' + version + state + '-server-cloudimg-'+ arch + '-disk1.img'
-
+        return 'ubuntu-' + version + state + '-server-cloudimg-' + arch + '-disk1.img'
 
     def get_base_url(self, release, serial, state):
         stability = ''
         added = 0
         for letter in state:
             if letter.isdigit() and added == 0:
-                added=1
+                added = 1
                 stability += '-' + str(letter)
             else:
                 stability += str(letter)
@@ -133,7 +134,9 @@ class UbuntuHandler:
         return {'url': url, 'serial': serial, 'checksum': sha256,
                 'hash_function': 'sha256'}
 
+
 HANDLERS = {'ubuntu': UbuntuHandler()}
+
 
 def get(distro, distroversion, arch):
     if distro in HANDLERS:
@@ -161,6 +164,7 @@ def get(distro, distroversion, arch):
     else:
         raise NameError('Image %s not found on server at %s' % (imagestring, URL))
 
+
 def add_distro(distro, version, distro_and_versions, codename=None):
     # Create dict entry for Distro, append if exists.
     if codename:
@@ -169,6 +173,7 @@ def add_distro(distro, version, distro_and_versions, codename=None):
         distro_and_versions[distro].append(version)
     except KeyError:
         distro_and_versions[distro] = [version]
+
 
 def get_distro_list():
     ubuntu_url = 'http://cloud-images.ubuntu.com/query/released.latest.txt'
@@ -187,7 +192,7 @@ def get_distro_list():
         # Ignore Ubuntu (we dont pull those from ceph.com)
         if not entry.startswith('ubuntu'):
 
-            #Ignore sha512 files
+            # Ignore sha512 files
             if 'sha512' not in entry:
                 if entry.endswith('.img') or entry.endswith('.raw'):
 
@@ -208,11 +213,13 @@ def get_distro_list():
         add_distro('ubuntu', version, distro_and_versions, codename)
     return distro_and_versions
 
+
 def make(parser):
     """
     Print Available Distributions and Versions.
     """
     parser.set_defaults(func=print_distros)
+
 
 def make_json(parser):
     """
@@ -220,16 +227,19 @@ def make_json(parser):
     """
     parser.set_defaults(func=print_json)
 
+
 def print_json(parser):
-    print json.dumps(get_distro_list())
+    print(json.dumps(get_distro_list()))
     return
 
+
 def print_distros(parser):
-    distro_and_versions =get_distro_list()
+    distro_and_versions = get_distro_list()
     for distro in sorted(distro_and_versions):
         version = distro_and_versions[distro]
-        print '{distro}:   \t {version}'. format(distro=distro,version=version)
+        print('{distro}:   \t {version}'. format(distro=distro, version=version))
     return
+
 
 def search(imagestring, list):
     for imagename in list:
